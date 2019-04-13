@@ -8,7 +8,7 @@ More information on DRO and OPL:
 * http://www.shikadi.net/moddingwiki/DRO_Format
 * http://www.fit.vutbr.cz/~arnost/opl/opl3.html
 
-(C) 2017, Michiel Sikma <michiel@sikma.org>. MIT licensed.
+(C) Michiel Sikma <michiel@sikma.org>. MIT licensed.
 '''
 from struct import *
 from stat import *
