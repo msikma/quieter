@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
 Short script to make OPL music (in DOSBox DRO files) less loud.
 
@@ -93,10 +93,10 @@ def print_info(infile_n, data, codemap, verbose):
         .format(data.iLongDelayCode, data.iLongDelayCode))
     print('Codemap table:  {} entries'
         .format(data.iCodemapLength))
-    
+
     if not verbose:
         return
-    
+
     print('')
 
     # Now print the complete codemap table.
@@ -118,19 +118,19 @@ class OPL2Quieter(object):
     def __init__(self, quiet_function):
         self.quiet_function = quiet_function
         self.registers = [0x00 for i in range(0x100)]
-    
+
     def write(self, register, value):
         if 0x40 <= register <= 0x55:  # If it is a level register
             # Algorithm bit is the LSB of algorithm/feedback register.
             algorithm = self.registers[LEVEL_TO_ALGORITHM[register]] & 0x01
-            
+
             if algorithm == 0x00:
                 # FM synthesis, only modify the level if it's a carrier.
                 modify_level = True if register in CARRIERS else False
             else:
                 # AM synthesis, modify level for both operators.
                 modify_level = True
-            
+
             if modify_level:
                 # Keep the top two bits (the KSL value) separate
                 # for purposes of calculation.
@@ -138,7 +138,7 @@ class OPL2Quieter(object):
                 # Perform the volume modification on the lower six bits.
                 level = self.quiet_function(value & 0x3F)
                 value = ksl | (level & 0x3F)
-        
+
         self.registers[register] = value
         return register, value
 
@@ -147,7 +147,7 @@ def quieter_main(infile_n, outfile_n, overwrite, verbose, level, silent=True):
     The main program: runs the quieter code on the input file.
     It also runs all the necessary checks to ensure that we can read
     and write, and prints debugging information if requested.
-    
+
     Returns an exit code, and an exit reason if the exit code is >0.
     '''
     # Redirect all output to the null device if we're in silent mode.
@@ -166,7 +166,7 @@ def quieter_main(infile_n, outfile_n, overwrite, verbose, level, silent=True):
         outfile = open(outfile_n, 'wb')
     except IOError:
         return (1, 'could not open output file.')
-    
+
     chunk = infile.read(26)
     values = [
         'cSignature', 'iVersionMajor', 'iVersionMinor', 'iLengthPairs',
@@ -180,7 +180,7 @@ def quieter_main(infile_n, outfile_n, overwrite, verbose, level, silent=True):
 
     if data.cSignature != b'DBRAWOPL':
         return (1, 'input file is not a valid DOSBox DRO file.')
-    
+
     # Copy over the codemap table, which has a variable length.
     codemap = infile.read(data.iCodemapLength)
     outfile.write(codemap)
@@ -205,7 +205,7 @@ def quieter_main(infile_n, outfile_n, overwrite, verbose, level, silent=True):
         reg, val = unpack('BB', chunk)
         # Keep the register value before we look it up in the codemap table.
         orig_reg = reg
-    
+
         # If the register's value is over 0x80, it applies to bank 1.
         if reg & 0x80:
             bank = 1
@@ -226,18 +226,18 @@ def quieter_main(infile_n, outfile_n, overwrite, verbose, level, silent=True):
             reg = codemap[reg]
             reg_print = '0x{:02X}'.format(reg)
             skip_quieter = False
-    
+
         # Check whether our quieter will change the value.
         # If so, print the change.
         val_before = val
-    
+
         # Run our values through the quieter, unless it's a delay.
         if not skip_quieter:
             reg, val = quieter.write(reg, val)
-        
+
         outfile.write(pack('BB', orig_reg, val))
         pairsRead += 1
-    
+
         # Print debugging information.
         if verbose:
             print('Pos: {:05d}   Bank: {:01d}   Reg: {}   Val: 0x{:02X}'
@@ -275,12 +275,12 @@ def run_cli():
         default=5,
         type=int)
     args = parser.parse_args()
-    
+
     # If we're here, that means all command line arguments were valid.
     # Run the main program and collect its return value.
     exit_code = quieter_main(args.infile, args.outfile, args.overwrite,
         args.verbose, args.level, args.silent)
-    
+
     # If the return value is 1, print an error message.
     if exit_code[0] == 1:
         parser.error(exit_code[1])
